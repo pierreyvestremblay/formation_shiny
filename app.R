@@ -21,7 +21,7 @@ ui <- page_sidebar(
                     checkboxGroupInput(
                       "annee",
                       tags$strong("Année"),
-                      choices = list("2007", "2008", "2009")#attention en mettant des guillemets ici les valeurs numériques sont enregistrées comme du texte, ne pas mettre de guillemets si on veut des valeurs numériques
+                      choices = list(2007, 2008, 2009)#attention en mettant des guillemets ici les valeurs numériques sont enregistrées comme du texte, ne pas mettre de guillemets si on veut des valeurs numériques
                     )),
   card(
       card_header(tags$strong("Tableau de bord")),
@@ -37,8 +37,13 @@ ui <- page_sidebar(
 
 # Serveur logic ----
 server <- function(input, output) {
-  output$masse_sexe_graph <- renderPlot({ penguins %>%
+  output$masse_sexe_graph <- renderPlot({ 
+    validate(
+      need(length(input$annee) > 0, "Sélectionner au moins une année"))
+    penguins %>%
       mutate(sex = recode(sex, "female" = "femelle", "male"   = "mâle")) %>%
+      filter(species == input$espece) %>%
+      filter(year == input$annee) %>%
       filter(!is.na(body_mass), !is.na(sex)) %>%
       ggplot(aes(x = sex, y = body_mass, color = sex)) +
       stat_summary(fun = mean, geom = "point", size = 3) +
@@ -53,6 +58,7 @@ server <- function(input, output) {
       theme(axis.text.x = element_blank())})
   
   output$aile_masse_graph <- renderPlot({penguins %>%
+      filter(species == input$espece) %>%
       filter(!is.na(flipper_len),!is.na(body_mass)) %>%
       ggplot(aes(x = body_mass, y = flipper_len)) +
       geom_point(color = "#74ADD1", alpha = 0.7) + 
